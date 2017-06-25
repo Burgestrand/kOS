@@ -10,92 +10,79 @@ function SAFE_STAGE {
   LOCK THROTTLE TO previousThrottle.
 }
 
-// Retrieve all engines in a specific stage.
-function STAGE_ENGINES {
-  PARAMETER stageNumber IS STAGE:NUMBER.
+// lock steering to a target, and wait until we're stable at that angle for X seconds.
+function steer_to {
+  parameter target.
+  parameter stable_time is 2.
 
-  local engines IS LIST().
-  LIST ENGINES in engines.
+  local facing_correctly to {
+    if not semi_equal(facing:roll, target:roll, 5) {
+      return false.
+    }
+    if not semi_equal(facing:pitch, target:pitch, 1) {
+      return false.
+    }
+    if not semi_equal(facing:yaw, target:yaw, 1) {
+      return false.
+    }
+    return true.
+  }.
 
-  local result IS LIST().
+  lock steering to target.
+
+  local wait_start is time:seconds.
+  until false {
+    if facing_correctly:call() {
+      local wait_time is time:seconds - wait_start.
+      if wait_time >= stable_time  {
+        break.
+      }
+    } else {
+      set wait_start to time:seconds.
+    }
+    wait 0.
+  }
+}
+
+// Auto-deploy antennas and solar thingies when entering/exiting the atmosphere.
+function autodeploy {
+  parameter action_group.
+  on (ship:altitude > body:atm:height) {
+    toggle action_group.
+    return true.
+  }
+}
+
+// Calculates how long it will take us to achieve a certain deltaV at max acceleration.
+function maneuver_time {
+  parameter deltaV.
+
+  local engines IS filter(LIST_OF("ENGINES"), {
+    parameter engine.
+    return engine:ignition AND NOT engine:flameout.
+  }).
+
+  local engine_thrust IS 0.
+  local engine_isp IS 0.
   for engine in engines {
-    if engine:STAGE = stageNumber {
-      result:add(engine).
-    }
-  }
-  return result.
-}
-
-// Retrieve all parts in a specific stage.
-function STAGE_PARTS {
-  PARAMETER stageNumber IS STAGE:NUMBER.
-
-  local parts IS LIST().
-  LIST PARTS in parts.
-
-  local result IS LIST().
-  for part in parts {
-    if part:STAGE = stageNumber {
-      result:add(part).
-    }
-  }
-  return result.
-}
-
-// Retrieve the total mass for a specific stage.
-function STAGE_TOTAL_MASS {
-  PARAMETER stageNumber IS STAGE:NUMBER.
-
-  local mass IS 0.
-
-  local parts IS LIST().
-  LIST PARTS IN parts.
-  for part in parts {
-    if part:STAGE <= stageNumber {
-      SET mass TO mass + part:MASS.
-    }
-  }
-  return mass.
-}
-
-// Retrive the dry mass of a specific stage.
-function STAGE_TOTAL_DRYMASS {
-  PARAMETER stageNumber IS STAGE:NUMBER.
-
-  local mass IS STAGE_TOTAL_MASS(stageNumber).
-
-  // Remove the difference of wet/dry mass from current stage.
-  local parts IS STAGE_PARTS(stageNumber).
-  for part in parts {
-    SET mass TO mass - (part:WETMASS - part:DRYMASS).
+    SET engine_thrust TO engine_thrust + engine:AVAILABLETHRUST.
+    SET engine_isp TO engine_isp + engine:ISPAT(0).
   }
 
-  return mass.
-}
+  if engine_thrust = 0 OR engine_isp = 0 {
+    return -1.
+  } else {
+    // gravitational parameter
+    local g IS SHIP:ORBIT:BODY:MU / (SHIP:ORBIT:BODY:RADIUS ^ 2).
 
-// Retrieve the total specific impulse if all engines fired in a stage.
-function STAGE_ISP {
-  PARAMETER stageNumber IS STAGE:NUMBER.
-  PARAMETER pressure IS 0. // Vacuum
+    local isp IS engine_isp / engines:LENGTH. // specific impulse
+    local ve IS g * isp. // effective exhaust velocity
 
-  local engines IS STAGE_ENGINES(stageNumber).
-  local totalISP IS 0.
-  for engine in engines {
-    SET totalISP TO totalISP + engine:ISPAT(pressure).
+    local e IS constant():e.
+    local mf IS 1 - e^(-deltaV / ve). // propellant mass fraction
+
+    local f IS engine_thrust * 1000. // enghine thrust (kg * m/s2)
+    local m IS SHIP:MASS * 1000. // starting mass (kg)
+    return g * m * isp * mf / f.
   }
-  return totalISP.
-}
-
-// Retrieve the available delta V for a specific stage.
-function STAGE_DELTAV {
-  PARAMETER stageNumber IS STAGE:NUMBER.
-  PARAMETER pressure IS 0. // Vacuum
-
-  //
-  local g is 9.81.
-  local v0 IS STAGE_ISP(stageNumber, pressure) * g.
-  local m0 IS STAGE_TOTAL_MASS(stageNumber).
-  local m1 IS STAGE_TOTAL_DRYMASS(stageNumber).
-
-  return v0 * LN(m0 / m1).
 }
