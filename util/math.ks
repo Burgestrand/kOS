@@ -1,3 +1,5 @@
+@LAZYGLOBAL off.
+
 function signum {
   parameter number.
 
@@ -6,13 +8,6 @@ function signum {
   } else {
     return -1.
   }
-}
-
-function semi_equal {
-  parameter a.
-  parameter b.
-  parameter difference.
-  return abs(a - b) <= difference.
 }
 
 function clamp {

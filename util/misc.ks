@@ -1,42 +1,27 @@
+@LAZYGLOBAL off.
+
 // Print a message to the screne.
 function notifty {
   PARAMETER message.
   HUDTEXT("kOS: " + message, 5, 2, 50, YELLOW, false).
 }
 
-function CLAMP {
-  PARAMETER number.
-  PARAMETER min.
-  PARAMETER max.
-  return MAX(MIN(number, max), min).
-}
-
 function PRINT_PID {
   PARAMETER PID.
   CLEARSCREEN.
-  print "ERROR: " + PID:ERROR.
-  print "ERROSUM: " + PID:ERRORSUM.
-  print "PTERM: " + PID:PTERM.
-  print "ITERM: " + PID:ITERM.
-  print "DTERM: " + PID:DTERM.
-  print "CHANGERATE: " + PID:CHANGERATE.
-}
 
-function SIGNUM {
-  PARAMETER number.
-  if number > 0 {
-    return 1.
+  print "P: " + PID:ERROR + " (" + PID:PTERM + ")".
+  if PID:KI <> 0 {
+    print "I: " + PID:ITERM / PID:KI + " (" + PID:ITERM + ")".
   } else {
-    return -1.
+    print "I: 0".
   }
+  print "D: " + PID:CHANGERATE + " (" + PID:DTERM + ")".
+  print "ERROSUM: " + PID:ERRORSUM.
+  print "SETPOINT: " + PID:SETPOINT.
+  print "INPUT: " + PID:INPUT.
+  print "OUTPUT: " + PID:OUTPUT.
 }
-
-function semi_equal {
-  parameter a.
-  parameter b.
-  parameter difference.
-  return abs(a - b) <= difference.
-}.
 
 // Convert the built in LIST INTO X to a function.
 function LIST_OF {
