@@ -1,5 +1,8 @@
 @LAZYGLOBAL off.
 
+global kG is 6.67408e-11.
+global kg0 is 9.80665.
+
 function vis_viva {
   parameter altitude.
   parameter semimajor.
@@ -39,17 +42,13 @@ function maneuver_time {
   if engine_thrust = 0 OR engine_isp = 0 {
     return -1.
   } else {
-    // gravitational parameter
-    local g IS SHIP:ORBIT:BODY:MU / (SHIP:ORBIT:BODY:RADIUS ^ 2).
-
     local isp IS engine_isp / engines:LENGTH. // specific impulse
-    local ve IS g * isp. // effective exhaust velocity
-
-    local e IS constant():e.
-    local mf IS 1 - e^(-deltaV / ve). // propellant mass fraction
+    local ve IS kg0 * isp. // effective exhaust velocity
+    local mf IS 1 - constant:e^(-deltaV / ve). // propellant mass fraction
 
     local f IS engine_thrust * 1000. // enghine thrust (kg * m/s2)
     local m IS SHIP:MASS * 1000. // starting mass (kg)
-    return g * m * isp * mf / f.
+
+    return kg0 * m * isp * mf / f.
   }
 }

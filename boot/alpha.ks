@@ -9,7 +9,7 @@ if ship:status = "prelaunch" {
   enable_auto_atmosphere_toggle().
 
   terminal_print("Ascending to outside atmosphere").
-  runpath("archive:ships/alpha/ascend").
+  runpath("archive:lib/ascent_profile", 100000).
 
   // Clear starting rockets.
   terminal_print("Clearing starting rockets").

@@ -1,3 +1,5 @@
+runoncepath("archive:bootstrap").
+
 // Calculate our velocity at apoapsis using vis-via equation.
 local v_ap is vis_viva(orbit:apoapsis, semimajoraxis()).
 

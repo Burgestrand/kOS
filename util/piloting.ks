@@ -1,5 +1,9 @@
 @LAZYGLOBAL off.
 
+//
+// Functions that do various steering maneuvers.
+//
+
 // Set ship throttle to 0.
 function kill_throttle {
   WAIT 0.

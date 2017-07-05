@@ -1,9 +1,36 @@
 @LAZYGLOBAL off.
 
-// Print a message to the screne.
-function notifty {
-  PARAMETER message.
-  HUDTEXT("kOS: " + message, 5, 2, 50, YELLOW, false).
+function die {
+  return 1/0.
+}
+
+function list_repeat {
+  parameter element.
+  parameter count.
+
+  local lst is list().
+  until lst:length >= count {
+    lst:add(element).
+  }
+  return lst.
+}
+
+// Returns a function that runs at most every `duration`s.
+function throttle_fn {
+  parameter duration.
+  parameter fn.
+
+  local last_call is -duration.
+  local last_value is 0.
+  return {
+    if (time:seconds - last_call) >= duration {
+      set last_call to time:seconds.
+      set last_value to fn().
+      return last_value.
+    } else {
+      return last_value.
+    }
+  }.
 }
 
 function PRINT_PID {
