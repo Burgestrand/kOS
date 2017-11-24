@@ -4,6 +4,50 @@ function die {
   return 1/0.
 }
 
+function time_format {
+  parameter seconds.
+
+  local one_day is body("Kerbin"):rotationperiod.
+  local one_hour is 60 * 60.
+  local one_minute is 60.
+
+  local current is seconds.
+
+  // Calculate days
+  local days is floor(current / one_day).
+  set current to current - (days * one_day).
+
+  // Calculate hours
+  local hours is floor(current / one_hour).
+  set current to current - (hours * one_hour).
+
+  // Calculate minutes
+  local minutes is floor(current / one_minute).
+  set current to current - (minutes * one_minute).
+
+  local seconds is round(current, 2).
+
+  local output is "".
+  set output to output + days + "d".
+  set output to output + hours + "h".
+  set output to output + minutes + "m".
+  set output to output + seconds + "s".
+  return output.
+}
+
+function time_parse {
+  parameter days.
+  parameter hours.
+  parameter minutes.
+  parameter seconds.
+
+  local days_s is days * body("Kerbin"):rotationperiod.
+  local hours_s is hours * 60 * 60.
+  local minutes_s is minutes * 60.
+
+  return days_s + hours_s + minutes_s + seconds.
+}
+
 function list_repeat {
   parameter element.
   parameter count.
@@ -13,6 +57,16 @@ function list_repeat {
     lst:add(element).
   }
   return lst.
+}
+
+function unsafely {
+  parameter fn.
+
+  local safe is config:safe.
+  set config:safe to false.
+  local value is fn().
+  set config:safe to safe.
+  return value.
 }
 
 // Returns a function that runs at most every `duration`s.

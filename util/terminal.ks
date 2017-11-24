@@ -17,23 +17,39 @@ function empty_line {
 
 global terminal_current_line is 0.
 
-function terminal_clearscrn {
+function terminal_clear {
   clearscreen.
   set terminal_current_line to 0.
-}
-
-function terminal_clear {
-  parameter line is terminal_current_line.
-  print empty_line() at (0, line).
 }
 
 function terminal_print {
   parameter message.
   parameter line is terminal_current_line.
 
-  terminal_clear(line).
+  print empty_line() at (0, line).
   print message at (0, line).
   set terminal_current_line to clamp(line + 1, 0, terminal:height).
+}
+
+function terminal_prompt {
+  parameter question.
+
+  local input is "".
+  local line is terminal_current_line.
+
+  Terminal:Input:CLEAR().
+  until false {
+    terminal_print(question + ": " + input, line).
+    local char is Terminal:Input:GETCHAR().
+
+    if char = Terminal:Input:ENTER {
+      break.
+    } else {
+      set input to input + char.
+    }
+  }
+
+  return input.
 }
 
 function terminal_wait {
@@ -47,7 +63,7 @@ function terminal_wait {
 
   if value:istype("scalar") {
     lock done to value <= 0.
-    lock progress to round(value) + "s".
+    lock progress to round(value).
   } else if value:istype("boolean") {
     lock done to value.
     local dots is ".".
